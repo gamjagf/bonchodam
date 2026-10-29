@@ -34,6 +34,13 @@ td select,td input{padding:6px 8px;width:auto}
 .check input{width:auto}
 .view[hidden]{display:none!important}
 main.wrap{padding-block:32px 64px}
+.upl{display:flex;gap:18px;align-items:center;flex-wrap:wrap;padding:16px;border:1px dashed var(--line);background:var(--hanji)}
+.upl img{width:120px;height:120px;object-fit:cover;border:1px solid var(--line);background:var(--card)}
+.upl-body{display:grid;gap:8px;flex:1;min-width:220px}
+.upl-title{font-size:13px;font-weight:700}
+label.upl-btn{display:inline-flex}
+.upl-btn{font-size:14px;font-weight:500}
+.upl-btn{padding:9px 16px}
 </style>
 </head>
 <body>
@@ -85,7 +92,19 @@ main.wrap{padding-block:32px 64px}
           <label for="pfColor">병 색상<input id="pfColor" type="color" value="#B8925A" style="height:44px;padding:4px"></label>
           <label for="pfStep">루틴 순서 (없으면 비움)<input id="pfStep" type="number" min="1" max="9"></label>
           <label for="pfSort">진열 순서<input id="pfSort" type="number" value="10"></label>
-          <label class="full" for="pfImg">사진 주소 (예: images/product-3-essence.webp 또는 https://… 사진 링크)<input id="pfImg" maxlength="500" placeholder="비워 두면 병 그림이 나옵니다"></label>
+          <div class="full upl">
+            <img id="pfPreview" alt="제품 사진 미리보기" width="120" height="120" hidden>
+            <div class="upl-body">
+              <span class="upl-title">제품 사진</span>
+              <div class="btns">
+                <label for="pfFile" class="btn ghost upl-btn">사진 올리기</label>
+                <input id="pfFile" type="file" accept="image/png,image/jpeg,image/webp" hidden>
+                <button type="button" class="btn ghost upl-btn" id="pfImgClear" hidden>사진 빼기</button>
+              </div>
+              <p class="muted" id="pfUpMsg" style="margin:0">사진을 고르면 800×800 크기로 줄여서 Supabase 사진 보관함에 올립니다.</p>
+            </div>
+          </div>
+          <label class="full" for="pfImg">사진 주소 (자동으로 채워집니다)<input id="pfImg" maxlength="500" placeholder="비워 두면 병 그림이 나옵니다"></label>
           <label class="full" for="pfSummary">한 줄 소개<input id="pfSummary" maxlength="60"></label>
           <label class="full" for="pfDesc">상세 설명<textarea id="pfDesc"></textarea></label>
           <label class="full" for="pfHow">사용법<textarea id="pfHow" style="min-height:70px"></textarea></label>
@@ -247,6 +266,8 @@ function fillForm(p){
   $("#pfPrice").value = p?.price ?? ""; $("#pfVol").value = p?.volume ?? ""; $("#pfColor").value = p?.color ?? "#B8925A";
   $("#pfStep").value = p?.routine_step ?? ""; $("#pfSort").value = p?.sort_order ?? 10;
   $("#pfImg").value = p?.image_url ?? "";
+  showPreview(p?.image_url);
+  $("#pfUpMsg").className = "muted"; $("#pfUpMsg").textContent = "사진을 고르면 800×800 크기로 줄여서 Supabase 사진 보관함에 올립니다.";
   $("#pfSummary").value = p?.summary ?? ""; $("#pfDesc").value = p?.description ?? ""; $("#pfHow").value = p?.how_to_use ?? "";
   $("#pfFeat").checked = !!p?.is_featured; $("#pfActive").checked = p ? p.is_active : true;
   renderIngChecks(p ? p.product_ingredients.map(x => x.ingredient_id) : []);
@@ -286,6 +307,64 @@ $("#productForm").addEventListener("submit", async e => {
   if (chosen.length) await sb.from("product_ingredients").insert(chosen);
   toast(id ? "제품 정보를 수정했습니다." : "새 제품을 등록했습니다. 쇼핑몰에 바로 보입니다.");
   fillForm(null); loadProducts();
+});
+
+/* ---------- 제품 사진 올리기 (Supabase 사진 보관함) ---------- */
+const BUCKET = "product-images";
+
+function showPreview(url){
+  const img = $("#pfPreview");
+  img.hidden = !url; if (url) img.src = url;
+  $("#pfImgClear").hidden = !url;
+}
+$("#pfImg").addEventListener("input", e => showPreview(e.target.value.trim()));
+
+// 큰 사진을 800×800 정사각형으로 잘라서 줄이기 (가운데 기준)
+async function shrinkImage(file, size = 800){
+  const bmp = await createImageBitmap(file);
+  const side = Math.min(bmp.width, bmp.height);
+  const canvas = document.createElement("canvas"); canvas.width = canvas.height = size;
+  canvas.getContext("2d").drawImage(bmp, (bmp.width - side) / 2, (bmp.height - side) / 2, side, side, 0, 0, size, size);
+  const blob = await new Promise(r => canvas.toBlob(r, "image/webp", 0.8));
+  if (blob && blob.type === "image/webp") return blob;
+  return new Promise(r => canvas.toBlob(r, "image/jpeg", 0.85));   // WebP를 못 만드는 브라우저용
+}
+
+$("#pfFile").addEventListener("change", async e => {
+  const file = e.target.files[0]; e.target.value = "";
+  if (!file) return;
+  const msg = $("#pfUpMsg");
+  if (!file.type.startsWith("image/")){ msg.className = "msg err"; msg.textContent = "사진 파일(PNG, JPG, WebP)만 올릴 수 있습니다."; return; }
+  if (file.size > 20 * 1024 * 1024){ msg.className = "msg err"; msg.textContent = "20MB보다 큰 사진은 올릴 수 없습니다."; return; }
+  try{
+    msg.className = "muted"; msg.textContent = "사진 크기를 줄이는 중…";
+    const blob = await shrinkImage(file);
+    const ext = blob.type === "image/webp" ? "webp" : "jpg";
+    const path = `products/${Date.now()}.${ext}`;
+    msg.textContent = `올리는 중… (${Math.round(file.size / 1024)}KB → ${Math.round(blob.size / 1024)}KB)`;
+    const { error } = await sb.storage.from(BUCKET).upload(path, blob, { contentType: blob.type, upsert: false });
+    if (error) throw error;
+    const url = sb.storage.from(BUCKET).getPublicUrl(path).data.publicUrl;
+    $("#pfImg").value = url; showPreview(url);
+    const id = $("#pfId").value;
+    if (id){   // 이미 있는 제품이면 바로 반영
+      const { error: upErr } = await sb.from("products").update({ image_url: url }).eq("id", id);
+      if (upErr) throw upErr;
+      await loadProducts(); fillForm(products.find(p => p.id === Number(id)));
+      $("#pfUpMsg").className = "msg ok"; $("#pfUpMsg").textContent = "사진을 올렸습니다. 쇼핑몰에 바로 반영되었습니다.";
+      toast("제품 사진을 바꿨습니다.");
+    } else {
+      msg.className = "msg ok"; msg.textContent = `사진을 올렸습니다 (${Math.round(blob.size / 1024)}KB). 아래 '등록하기'를 누르면 제품과 함께 저장됩니다.`;
+    }
+  }catch(err){
+    console.error(err);
+    msg.className = "msg err"; msg.textContent = "사진을 올리지 못했습니다. " + friendlyError(err);
+  }
+});
+
+$("#pfImgClear").addEventListener("click", () => {
+  $("#pfImg").value = ""; showPreview("");
+  $("#pfUpMsg").className = "muted"; $("#pfUpMsg").textContent = "사진을 뺐습니다. 저장 버튼을 누르면 병 그림으로 바뀝니다.";
 });
 
 /* ---------- 문의 ---------- */
