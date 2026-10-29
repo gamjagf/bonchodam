@@ -1,0 +1,330 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>본초담 관리자</title>
+<meta name="robots" content="noindex">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Nanum+Myeongjo:wght@400;700;800&family=Noto+Sans+KR:wght@400;500;700&display=swap">
+<link rel="stylesheet" href="style.css">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>
+<script src="config.js"></script>
+<style>
+.admin-tabs{display:flex;gap:4px;flex-wrap:wrap;border-bottom:1px solid var(--line);margin-bottom:24px}
+.admin-tabs button{background:none;border:0;padding:12px 16px;cursor:pointer;color:var(--meok-soft);border-bottom:2px solid transparent;font-weight:500}
+.admin-tabs button[aria-selected="true"]{color:var(--meok);border-bottom-color:var(--gold)}
+.kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:12px;margin-bottom:28px}
+.kpi{background:var(--card);border:1px solid var(--line);padding:18px}
+.kpi small{color:var(--meok-soft);font-size:13px}
+.kpi b{display:block;font-family:var(--display);font-size:28px;margin-top:4px;font-variant-numeric:tabular-nums}
+.kpi.alert b{color:var(--gold)}
+.tbl-wrap{overflow-x:auto;border:1px solid var(--line);background:var(--card)}
+table{border-collapse:collapse;width:100%;font-size:14px;min-width:680px}
+th,td{padding:12px 14px;border-bottom:1px solid var(--line);text-align:left;vertical-align:top}
+th{font-size:12px;color:var(--meok-soft);font-weight:700;background:var(--hanji-2);white-space:nowrap}
+td.num{text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap}
+tr:last-child td{border-bottom:0}
+td select,td input{padding:6px 8px;width:auto}
+.muted{color:var(--meok-soft);font-size:13px}
+.pform{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:14px}
+.pform .full{grid-column:1/-1}
+.check{display:flex;align-items:center;gap:8px;font-size:14px}
+.check input{width:auto}
+.view[hidden]{display:none!important}
+main.wrap{padding-block:32px 64px}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="wrap">
+    <a class="logo" href="index.html">본초담 <small>관리자</small></a>
+    <div class="acct" id="acct"><a class="mini" href="index.html">쇼핑몰로 가기</a></div>
+  </div>
+</header>
+
+<main class="wrap">
+  <div id="gate" class="panel gate">관리자 확인 중입니다…</div>
+
+  <div id="app" hidden>
+    <div class="admin-tabs" role="tablist" id="tabs">
+      <button type="button" role="tab" data-view="dash" aria-selected="true">한눈에 보기</button>
+      <button type="button" role="tab" data-view="orders" aria-selected="false">주문 관리</button>
+      <button type="button" role="tab" data-view="products" aria-selected="false">제품 관리</button>
+      <button type="button" role="tab" data-view="inquiries" aria-selected="false">문의</button>
+      <button type="button" role="tab" data-view="reviews" aria-selected="false">후기</button>
+      <button type="button" role="tab" data-view="members" aria-selected="false">회원·구독</button>
+    </div>
+
+    <!-- 한눈에 보기 -->
+    <section class="view" id="v-dash" style="border:0;padding:0">
+      <div class="kpis" id="kpis"></div>
+      <h3 style="font-size:20px;margin-bottom:14px">최근 주문</h3>
+      <div class="tbl-wrap"><table><thead><tr><th>번호</th><th>주문일시</th><th>받는 분</th><th>상품</th><th>금액</th><th>상태</th></tr></thead><tbody id="recentOrders"></tbody></table></div>
+    </section>
+
+    <!-- 주문 관리 -->
+    <section class="view" id="v-orders" hidden style="border:0;padding:0">
+      <p class="muted">상태를 바꾸면 고객의 '나의 주문 내역'에 바로 반영됩니다.</p>
+      <div class="tbl-wrap"><table><thead><tr><th>번호</th><th>주문일시</th><th>받는 분 · 연락처</th><th>주소 · 메모</th><th>상품</th><th>금액</th><th>상태</th></tr></thead><tbody id="orderRows"></tbody></table></div>
+    </section>
+
+    <!-- 제품 관리 -->
+    <section class="view" id="v-products" hidden style="border:0;padding:0">
+      <form class="panel" id="productForm" style="margin-bottom:24px">
+        <h3 style="font-size:20px" id="pfTitle">새 제품 등록</h3>
+        <input type="hidden" id="pfId">
+        <div class="pform">
+          <label for="pfName">제품명<input id="pfName" required maxlength="40"></label>
+          <label for="pfCat">분류<input id="pfCat" required maxlength="20" list="catList" placeholder="에센스, 크림…"></label>
+          <datalist id="catList"><option>클렌저</option><option>토너</option><option>에센스</option><option>세럼</option><option>크림</option><option>마스크</option></datalist>
+          <label for="pfPrice">가격(원)<input id="pfPrice" type="number" min="0" step="100" required></label>
+          <label for="pfVol">용량<input id="pfVol" maxlength="20" placeholder="50ml"></label>
+          <label for="pfColor">병 색상<input id="pfColor" type="color" value="#B8925A" style="height:44px;padding:4px"></label>
+          <label for="pfStep">루틴 순서 (없으면 비움)<input id="pfStep" type="number" min="1" max="9"></label>
+          <label for="pfSort">진열 순서<input id="pfSort" type="number" value="10"></label>
+          <label class="full" for="pfSummary">한 줄 소개<input id="pfSummary" maxlength="60"></label>
+          <label class="full" for="pfDesc">상세 설명<textarea id="pfDesc"></textarea></label>
+          <label class="full" for="pfHow">사용법<textarea id="pfHow" style="min-height:70px"></textarea></label>
+          <div class="full" id="pfIngs" style="display:flex;gap:14px;flex-wrap:wrap"></div>
+          <label class="check"><input id="pfFeat" type="checkbox"> 추천 제품</label>
+          <label class="check"><input id="pfActive" type="checkbox" checked> 판매 중 (끄면 쇼핑몰에서 숨김)</label>
+        </div>
+        <p class="edu" style="margin-top:14px">화장품법 주의: '치료', '재생', '염증 완화', '아토피 개선' 같은 의약품처럼 보이는 표현은 쓰지 마세요.</p>
+        <div class="btns" style="margin-top:14px"><button class="btn" type="submit" id="pfSubmit">등록하기</button>
+          <button class="btn ghost" type="button" id="pfReset">새로 쓰기</button></div>
+        <p class="msg" id="pfOut" role="status"></p>
+      </form>
+      <div class="tbl-wrap"><table><thead><tr><th>진열</th><th>제품명</th><th>분류</th><th>가격</th><th>판매</th><th></th></tr></thead><tbody id="productRows"></tbody></table></div>
+    </section>
+
+    <!-- 문의 -->
+    <section class="view" id="v-inquiries" hidden style="border:0;padding:0">
+      <div class="tbl-wrap"><table><thead><tr><th>접수일</th><th>이름</th><th>연락처</th><th>내용</th><th>상태</th></tr></thead><tbody id="inqRows"></tbody></table></div>
+    </section>
+
+    <!-- 후기 -->
+    <section class="view" id="v-reviews" hidden style="border:0;padding:0">
+      <p class="muted">부적절한 후기는 '숨김'으로 바꾸면 쇼핑몰에서 보이지 않습니다.</p>
+      <div class="tbl-wrap"><table><thead><tr><th>작성일</th><th>제품</th><th>작성자</th><th>별점</th><th>내용</th><th>공개</th></tr></thead><tbody id="rvRows"></tbody></table></div>
+    </section>
+
+    <!-- 회원·구독 -->
+    <section class="view" id="v-members" hidden style="border:0;padding:0">
+      <h3 style="font-size:20px;margin-bottom:14px">회원</h3>
+      <div class="tbl-wrap" style="margin-bottom:28px"><table><thead><tr><th>가입일</th><th>이름</th><th>이메일</th><th>구분</th></tr></thead><tbody id="memRows"></tbody></table></div>
+      <h3 style="font-size:20px;margin-bottom:14px">뉴스레터 구독자</h3>
+      <div class="tbl-wrap"><table><thead><tr><th>신청일</th><th>이메일</th></tr></thead><tbody id="nlRows"></tbody></table></div>
+    </section>
+  </div>
+</main>
+
+<div class="toast" id="toast" hidden role="status"></div>
+
+<script>
+/* ============================================================
+   본초담 관리자 페이지
+   - 관리자(role = admin)로 로그인한 사람만 데이터를 볼 수 있습니다.
+   - 화면을 숨기는 것만이 아니라, Supabase 보안 잠금(RLS)이
+     관리자가 아니면 데이터 자체를 내주지 않습니다.
+   ============================================================ */
+let products = [], ingredients = [];
+const STATUS_INQ = ["접수", "처리중", "답변완료"];
+
+function toast(t){ const el = $("#toast"); el.textContent = t; el.hidden = false; clearTimeout(toast.k); toast.k = setTimeout(() => el.hidden = true, 2400); }
+const empty = (cols, text) => `<tr><td colspan="${cols}" class="muted" style="text-align:center;padding:28px">${text}</td></tr>`;
+
+/* ---------- 관리자 확인 ---------- */
+async function boot(){
+  const { data: { session } } = await sb.auth.getSession();
+  if (!session){
+    $("#gate").innerHTML = `<p style="margin:0">관리자 계정으로 로그인해 주세요.</p>
+      <form id="adLogin" style="max-width:340px;margin:20px auto 0;text-align:left">
+        <label for="adEmail">이메일<input id="adEmail" type="email" required autocomplete="email"></label>
+        <label for="adPw">비밀번호<input id="adPw" type="password" required autocomplete="current-password"></label>
+        <div class="btns"><button class="btn" type="submit">로그인</button></div>
+        <p class="msg" id="adOut" role="status"></p></form>`;
+    $("#adLogin").addEventListener("submit", async e => {
+      e.preventDefault();
+      const { error } = await sb.auth.signInWithPassword({ email: $("#adEmail").value.trim(), password: $("#adPw").value });
+      if (error){ $("#adOut").className = "msg err"; $("#adOut").textContent = friendlyError(error); return; }
+      boot();
+    });
+    return;
+  }
+  const { data: profile } = await sb.from("profiles").select("*").eq("id", session.user.id).maybeSingle();
+  if (profile?.role !== "admin"){
+    $("#gate").innerHTML = `<p style="margin:0">${esc(session.user.email)} 계정은 관리자 권한이 없습니다.</p>
+      <div class="btns"><a class="btn" href="index.html">쇼핑몰로 돌아가기</a>
+      <button class="btn ghost" type="button" id="swBtn">다른 계정으로 로그인</button></div>`;
+    $("#swBtn").addEventListener("click", async () => { await sb.auth.signOut(); boot(); });
+    return;
+  }
+  $("#acct").innerHTML = `<span class="who">${esc(profile.name)} 관리자님</span>
+    <a class="mini" href="index.html">쇼핑몰로 가기</a><button class="mini" type="button" id="outBtn">로그아웃</button>`;
+  $("#outBtn").addEventListener("click", async () => { await sb.auth.signOut(); location.href = "index.html"; });
+  $("#gate").hidden = true; $("#app").hidden = false;
+  await Promise.all([loadDash(), loadProducts()]);
+}
+
+/* ---------- 탭 ---------- */
+const loaders = { dash: loadDash, orders: loadOrders, products: loadProducts, inquiries: loadInquiries, reviews: loadReviews, members: loadMembers };
+$("#tabs").addEventListener("click", e => {
+  const b = e.target.closest("[data-view]"); if (!b) return;
+  document.querySelectorAll("#tabs button").forEach(x => x.setAttribute("aria-selected", x === b));
+  document.querySelectorAll(".view").forEach(v => v.hidden = v.id !== "v-" + b.dataset.view);
+  loaders[b.dataset.view]();
+});
+
+/* ---------- 한눈에 보기 ---------- */
+async function loadDash(){
+  const [o, i, m, r] = await Promise.all([
+    sb.from("orders").select("id, created_at, recipient, total, status, order_items(product_name, quantity)").order("created_at", { ascending: false }),
+    sb.from("inquiries").select("id", { count: "exact", head: true }).eq("status", "접수"),
+    sb.from("profiles").select("id", { count: "exact", head: true }),
+    sb.from("reviews").select("rating")
+  ]);
+  const orders = o.data ?? [];
+  const valid = orders.filter(x => x.status !== "주문취소");
+  const sales = valid.reduce((s, x) => s + x.total, 0);
+  const waiting = orders.filter(x => x.status === "주문접수").length;
+  const avg = r.data?.length ? (r.data.reduce((s, x) => s + x.rating, 0) / r.data.length).toFixed(1) : "-";
+  $("#kpis").innerHTML = [
+    ["누적 매출 (교육용)", won(sales)], ["전체 주문", valid.length + "건"],
+    ["처리 대기 주문", waiting + "건", waiting > 0], ["새 문의", (i.count ?? 0) + "건", i.count > 0],
+    ["회원 수", (m.count ?? 0) + "명"], ["평균 별점", avg]
+  ].map(([k, v, alert]) => `<div class="kpi ${alert ? "alert" : ""}"><small>${k}</small><b>${v}</b></div>`).join("");
+  $("#recentOrders").innerHTML = orders.slice(0, 8).map(x => `<tr><td>${x.id}</td><td>${dateTime(x.created_at)}</td><td>${esc(x.recipient)}</td>
+    <td>${esc(x.order_items.map(it => it.product_name + "×" + it.quantity).join(", "))}</td><td class="num">${won(x.total)}</td>
+    <td><span class="status" data-s="${esc(x.status)}">${esc(x.status)}</span></td></tr>`).join("") || empty(6, "아직 주문이 없습니다.");
+}
+
+/* ---------- 주문 관리 ---------- */
+async function loadOrders(){
+  const { data, error } = await sb.from("orders").select("*, order_items(product_name, quantity, price)").order("created_at", { ascending: false });
+  if (error){ toast(friendlyError(error)); return; }
+  $("#orderRows").innerHTML = data.map(o => `<tr><td>${o.id}</td><td>${dateTime(o.created_at)}</td>
+    <td>${esc(o.recipient)}<br><span class="muted">${esc(o.phone)}</span></td>
+    <td>${esc(o.address)}${o.memo ? `<br><span class="muted">${esc(o.memo)}</span>` : ""}</td>
+    <td>${o.order_items.map(i => `${esc(i.product_name)} × ${i.quantity}`).join("<br>")}</td>
+    <td class="num">${won(o.total)}</td>
+    <td><select data-order="${o.id}" aria-label="주문 ${o.id} 상태">${ORDER_STEPS.map(s => `<option ${s === o.status ? "selected" : ""}>${s}</option>`).join("")}</select></td></tr>`).join("")
+    || empty(7, "아직 주문이 없습니다.");
+}
+$("#orderRows").addEventListener("change", async e => {
+  const s = e.target.closest("[data-order]"); if (!s) return;
+  const { error } = await sb.from("orders").update({ status: s.value }).eq("id", s.dataset.order);
+  toast(error ? friendlyError(error) : `주문 ${s.dataset.order}번 → ${s.value}`);
+});
+
+/* ---------- 제품 관리 ---------- */
+async function loadProducts(){
+  const [p, i] = await Promise.all([
+    sb.from("products").select("*, product_ingredients(ingredient_id)").order("sort_order"),
+    sb.from("ingredients").select("id, name, hanja").order("sort_order")
+  ]);
+  products = p.data ?? []; ingredients = i.data ?? [];
+  $("#productRows").innerHTML = products.map(x => `<tr><td class="num">${x.sort_order}</td>
+    <td><span class="dot" style="--c:${esc(x.color)};width:14px;height:14px;display:inline-block;vertical-align:middle;margin-right:8px"></span>${esc(x.name)}${x.is_featured ? ' <span class="badge">추천</span>' : ""}</td>
+    <td>${esc(x.category)}</td><td class="num">${won(x.price)}</td>
+    <td><label class="check"><input type="checkbox" data-active="${x.id}" ${x.is_active ? "checked" : ""}> ${x.is_active ? "판매 중" : "숨김"}</label></td>
+    <td><button class="mini" type="button" data-edit="${x.id}">수정</button></td></tr>`).join("") || empty(6, "등록된 제품이 없습니다.");
+  renderIngChecks([]);
+}
+
+function renderIngChecks(selected){
+  $("#pfIngs").innerHTML = `<span class="muted" style="width:100%">주요 원료</span>` + ingredients.map(i =>
+    `<label class="check"><input type="checkbox" value="${i.id}" ${selected.includes(i.id) ? "checked" : ""}> ${esc(i.name)} ${esc(i.hanja)}</label>`).join("");
+}
+
+function fillForm(p){
+  $("#pfId").value = p?.id ?? ""; $("#pfName").value = p?.name ?? ""; $("#pfCat").value = p?.category ?? "";
+  $("#pfPrice").value = p?.price ?? ""; $("#pfVol").value = p?.volume ?? ""; $("#pfColor").value = p?.color ?? "#B8925A";
+  $("#pfStep").value = p?.routine_step ?? ""; $("#pfSort").value = p?.sort_order ?? 10;
+  $("#pfSummary").value = p?.summary ?? ""; $("#pfDesc").value = p?.description ?? ""; $("#pfHow").value = p?.how_to_use ?? "";
+  $("#pfFeat").checked = !!p?.is_featured; $("#pfActive").checked = p ? p.is_active : true;
+  renderIngChecks(p ? p.product_ingredients.map(x => x.ingredient_id) : []);
+  $("#pfTitle").textContent = p ? `제품 수정 · ${p.name}` : "새 제품 등록";
+  $("#pfSubmit").textContent = p ? "수정 저장" : "등록하기"; $("#pfOut").textContent = "";
+}
+
+$("#productRows").addEventListener("click", e => {
+  const b = e.target.closest("[data-edit]"); if (!b) return;
+  fillForm(products.find(p => p.id === Number(b.dataset.edit)));
+  $("#productForm").scrollIntoView({ behavior: "smooth" });
+});
+$("#productRows").addEventListener("change", async e => {
+  const c = e.target.closest("[data-active]"); if (!c) return;
+  const { error } = await sb.from("products").update({ is_active: c.checked }).eq("id", c.dataset.active);
+  toast(error ? friendlyError(error) : (c.checked ? "쇼핑몰에 다시 보입니다." : "쇼핑몰에서 숨겼습니다."));
+  loadProducts();
+});
+$("#pfReset").addEventListener("click", () => fillForm(null));
+
+$("#productForm").addEventListener("submit", async e => {
+  e.preventDefault();
+  const out = $("#pfOut"), id = $("#pfId").value;
+  const row = {
+    name: $("#pfName").value.trim(), category: $("#pfCat").value.trim(), price: Number($("#pfPrice").value),
+    volume: $("#pfVol").value.trim(), color: $("#pfColor").value, routine_step: $("#pfStep").value ? Number($("#pfStep").value) : null,
+    sort_order: Number($("#pfSort").value || 0), summary: $("#pfSummary").value.trim(), description: $("#pfDesc").value.trim(),
+    how_to_use: $("#pfHow").value.trim(), is_featured: $("#pfFeat").checked, is_active: $("#pfActive").checked
+  };
+  out.className = "msg"; out.textContent = "저장하는 중…";
+  const res = id ? await sb.from("products").update(row).eq("id", id).select("id").single()
+                 : await sb.from("products").insert(row).select("id").single();
+  if (res.error){ out.className = "msg err"; out.textContent = friendlyError(res.error); return; }
+  const pid = res.data.id;
+  const chosen = [...document.querySelectorAll("#pfIngs input:checked")].map(x => ({ product_id: pid, ingredient_id: Number(x.value) }));
+  await sb.from("product_ingredients").delete().eq("product_id", pid);
+  if (chosen.length) await sb.from("product_ingredients").insert(chosen);
+  toast(id ? "제품 정보를 수정했습니다." : "새 제품을 등록했습니다. 쇼핑몰에 바로 보입니다.");
+  fillForm(null); loadProducts();
+});
+
+/* ---------- 문의 ---------- */
+async function loadInquiries(){
+  const { data } = await sb.from("inquiries").select("*").order("created_at", { ascending: false });
+  $("#inqRows").innerHTML = (data ?? []).map(q => `<tr><td>${dateTime(q.created_at)}</td><td>${esc(q.name)}</td><td>${esc(q.contact)}</td>
+    <td style="max-width:360px;white-space:pre-wrap">${esc(q.message)}</td>
+    <td><select data-inq="${q.id}" aria-label="문의 상태">${STATUS_INQ.map(s => `<option ${s === q.status ? "selected" : ""}>${s}</option>`).join("")}</select></td></tr>`).join("")
+    || empty(5, "들어온 문의가 없습니다.");
+}
+$("#inqRows").addEventListener("change", async e => {
+  const s = e.target.closest("[data-inq]"); if (!s) return;
+  const { error } = await sb.from("inquiries").update({ status: s.value }).eq("id", s.dataset.inq);
+  toast(error ? friendlyError(error) : "문의 상태를 바꿨습니다.");
+});
+
+/* ---------- 후기 ---------- */
+async function loadReviews(){
+  const { data } = await sb.from("reviews").select("*, products(name)").order("created_at", { ascending: false });
+  $("#rvRows").innerHTML = (data ?? []).map(r => `<tr><td>${date(r.created_at)}</td><td>${esc(r.products?.name)}</td><td>${esc(r.author)}</td>
+    <td style="color:var(--gold);white-space:nowrap">${stars(r.rating)}</td><td style="max-width:360px">${esc(r.content)}</td>
+    <td><label class="check"><input type="checkbox" data-rv="${r.id}" ${r.is_visible ? "checked" : ""}> ${r.is_visible ? "공개" : "숨김"}</label></td></tr>`).join("")
+    || empty(6, "후기가 없습니다.");
+}
+$("#rvRows").addEventListener("change", async e => {
+  const c = e.target.closest("[data-rv]"); if (!c) return;
+  const { error } = await sb.from("reviews").update({ is_visible: c.checked }).eq("id", c.dataset.rv);
+  toast(error ? friendlyError(error) : (c.checked ? "후기를 다시 공개했습니다." : "후기를 숨겼습니다."));
+  loadReviews();
+});
+
+/* ---------- 회원·구독 ---------- */
+async function loadMembers(){
+  const [m, n] = await Promise.all([
+    sb.from("profiles").select("*").order("created_at", { ascending: false }),
+    sb.from("newsletter").select("*").order("created_at", { ascending: false })
+  ]);
+  $("#memRows").innerHTML = (m.data ?? []).map(x => `<tr><td>${date(x.created_at)}</td><td>${esc(x.name)}</td><td>${esc(x.email)}</td>
+    <td>${x.role === "admin" ? '<span class="badge">관리자</span>' : "고객"}</td></tr>`).join("") || empty(4, "아직 회원이 없습니다.");
+  $("#nlRows").innerHTML = (n.data ?? []).map(x => `<tr><td>${date(x.created_at)}</td><td>${esc(x.email)}</td></tr>`).join("") || empty(2, "구독자가 없습니다.");
+}
+
+boot();
+</script>
+</body>
+</html>
