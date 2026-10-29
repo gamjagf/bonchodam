@@ -179,3 +179,6 @@ header{top:env(safe-area-inset-top,0px)}
 .toast{position:fixed;left:50%;bottom:calc(24px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);background:var(--meok);color:var(--hanji);padding:12px 20px;border-radius:2px;font-size:14px;z-index:60;box-shadow:0 8px 24px rgba(0,0,0,.2);max-width:calc(100vw - 32px)}
 .add-row{display:flex;gap:10px;align-items:end;flex-wrap:wrap}
 .add-row label{flex:0 0 110px}
+
+@media (max-width:720px){.logo{white-space:nowrap;font-size:20px}.acct .who{display:none}header .wrap{gap:10px}}
+.logo{white-space:nowrap;flex-shrink:0}
