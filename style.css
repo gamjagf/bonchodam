@@ -285,3 +285,25 @@ footer{border-top:0;background:var(--hanji-2)}
   .acct .mini{padding:6px 10px;font-size:12px}
   .logo small{display:none}
 }
+
+/* ---------- 찾기 쉽게: 담기 버튼·쇼핑 안내·관리자 ---------- */
+.prod{cursor:default}
+.prod-open{all:unset;display:flex;flex-direction:column;gap:12px;cursor:pointer;flex:1;min-width:0}
+.prod-open:focus-visible{outline:2px solid var(--gold);outline-offset:4px;border-radius:12px}
+.prod .foot{align-items:center;gap:10px}
+.prod .foot small{color:var(--meok-soft);font-weight:400}
+.add-btn{border:0;background:var(--gold);color:#fff;border-radius:999px;padding:9px 16px;font-size:13px;font-weight:700;cursor:pointer;white-space:nowrap;box-shadow:0 6px 16px -8px var(--gold)}
+.add-btn:hover{filter:brightness(1.05);transform:translateY(-1px)}
+.cart-link{border-color:var(--gold)!important;color:var(--gold);font-weight:700}
+.cart-link .count{background:var(--gold)}
+.admin-link{background:var(--ssuk)!important;border-color:var(--ssuk)!important;color:#fff!important}
+
+.guide{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px;margin:-24px 0 24px}
+.guide a{display:flex;gap:12px;align-items:center;padding:16px 18px;border:1px solid var(--line);border-radius:18px;background:var(--card);text-decoration:none;color:var(--meok);min-width:0;transition:border-color .2s, transform .2s}
+.guide a:hover{border-color:var(--gold);transform:translateY(-2px)}
+.guide b{flex:0 0 34px;height:34px;border-radius:50%;display:grid;place-items:center;background:var(--blush);color:var(--gold);font-size:15px}
+.guide span{display:grid;font-size:12px;color:var(--meok-soft);line-height:1.5;min-width:0}
+.guide strong{font-size:14px;color:var(--meok)}
+.guide .guide-admin b{background:var(--sky);color:var(--ssuk)}
+@media (max-width:860px){.guide{grid-template-columns:repeat(2,minmax(0,1fr));margin-top:0}}
+@media (max-width:420px){.guide a{padding:12px}.guide span{font-size:11px}}

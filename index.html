@@ -20,7 +20,7 @@
   <div class="wrap">
     <a class="logo" href="#top">본초담 <small>本草談</small></a>
     <nav>
-      <a href="#products">제품</a><a href="#ingredients">원료 사전</a><a href="#routine">루틴</a><a href="#moments">화보</a><a href="#reviews">후기</a><a href="#orders">내 주문</a>
+      <a href="#products">제품</a><a href="#ingredients">원료 사전</a><a href="#routine">루틴</a><a href="#moments">화보</a><a href="#reviews">후기</a><a href="#orders">주문내역</a><a href="admin.html">관리자</a>
     </nav>
     <div class="acct" id="acct">
       <a class="mini" href="#cart">장바구니 <span class="count" id="cartCount">0</span></a>
@@ -44,6 +44,16 @@
     <figure class="hero-photo">
       <img src="images/model-1-essence.webp" alt="홍삼 윤빛 에센스를 두 손으로 들고 미소 짓는 본초담 모델" width="900" height="1125" fetchpriority="high">
     </figure>
+  </div>
+
+  <!-- 쇼핑 순서 안내: 장바구니·주문·관리자 위치를 한눈에 -->
+  <div class="wrap">
+    <nav class="guide" aria-label="쇼핑 순서 안내">
+      <a href="#products"><b>1</b><span><strong>제품 고르기</strong>제품 카드의 '장바구니 담기'</span></a>
+      <a href="#cart"><b>2</b><span><strong>장바구니 · 주문하기</strong>받는 분과 주소 입력 후 주문</span></a>
+      <a href="#orders"><b>3</b><span><strong>주문내역</strong>배송 상태 확인 · 주문 취소</span></a>
+      <a href="admin.html" class="guide-admin"><b>⚙</b><span><strong>관리자 화면</strong>주문·제품·사진 관리</span></a>
+    </nav>
   </div>
 
   <section id="products">
@@ -153,7 +163,7 @@
 <footer>
   <div class="wrap">
     <div>본초담 本草談 · 교육용 가상 브랜드입니다. 실제 결제·배송은 이루어지지 않습니다.</div>
-    <div>Data by Supabase · Built by Claude Agent</div>
+    <div><a href="admin.html">관리자 화면</a> · Data by Supabase · Built by Claude Agent</div>
   </div>
 </footer>
 

@@ -67,12 +67,15 @@ function renderProducts(){
   const list = activeCat === "전체" ? products : products.filter(p => p.category === activeCat);
   $("#productGrid").innerHTML = list.length ? list.map(p => {
     const h = p.product_ingredients[0]?.ingredients?.hanja ?? "";
-    return `<button class="prod" type="button" data-id="${p.id}">
-      ${productVisual(p, h)}
-      <div class="cat">${esc(p.category)}${p.is_featured ? '<span class="badge">추천</span>' : ""}</div>
-      <h3>${esc(p.name)}</h3><p>${esc(p.summary)}</p>
-      <div class="foot"><span class="price">${won(p.price)}</span><small>${esc(p.volume)}</small></div>
-    </button>`; }).join("") : `<div class="empty">이 분류에는 아직 제품이 없습니다.</div>`;
+    return `<article class="prod">
+      <button class="prod-open" type="button" data-id="${p.id}" aria-label="${esc(p.name)} 자세히 보기">
+        ${productVisual(p, h)}
+        <div class="cat">${esc(p.category)}${p.is_featured ? '<span class="badge">추천</span>' : ""}</div>
+        <h3>${esc(p.name)}</h3><p>${esc(p.summary)}</p>
+      </button>
+      <div class="foot"><span class="price">${won(p.price)} <small>· ${esc(p.volume)}</small></span>
+        <button class="add-btn" type="button" data-add="${p.id}">장바구니 담기</button></div>
+    </article>`; }).join("") : `<div class="empty">이 분류에는 아직 제품이 없습니다.</div>`;
 }
 
 function renderRoutine(){
@@ -182,15 +185,16 @@ async function refreshMember(){
     await loadCart();
   }
   renderAccount(); renderCart(); loadOrders();
+  if (user && pendingAdd){ const p = pendingAdd; pendingAdd = null; await addToCart(p.productId, p.qty); }
 }
 
 function renderAccount(){
   const count = cart.reduce((s, c) => s + c.quantity, 0);
-  const cartLink = `<a class="mini" href="#cart">장바구니 <span class="count">${count}</span></a>`;
+  const cartLink = `<a class="mini cart-link" href="#cart">장바구니 <span class="count">${count}</span></a>`;
   $("#acct").innerHTML = user
     ? `<span class="who">${esc(profile?.name ?? user.email)}님</span>
-       ${profile?.role === "admin" ? '<a class="mini dark" href="admin.html">관리자</a>' : ""}
-       ${cartLink}<button class="mini" type="button" id="logoutBtn">로그아웃</button>`
+       ${profile?.role === "admin" ? '<a class="mini admin-link" href="admin.html">관리자</a>' : ""}
+       ${cartLink}<a class="mini" href="#orders">주문내역</a><button class="mini" type="button" id="logoutBtn">로그아웃</button>`
     : `${cartLink}<button class="mini" type="button" data-open-auth="signup">회원가입</button>
        <button class="mini dark" type="button" data-open-auth="login">로그인</button>`;
   $("#logoutBtn")?.addEventListener("click", logout);
@@ -209,14 +213,23 @@ async function loadCart(){
   cart = error ? [] : data.filter(c => c.products?.is_active);
 }
 
+let pendingAdd = null;   // 로그인 전에 누른 '담기'는 로그인 후 자동으로 담아 줍니다
 async function addToCart(productId, qty){
-  if (!user){ $("#detail").close(); openAuth("login"); toast("장바구니는 로그인 후 쓸 수 있습니다."); return; }
+  if (!user){
+    pendingAdd = { productId, qty };
+    $("#detail").open && $("#detail").close(); openAuth("login");
+    toast("장바구니는 회원 전용이에요. 로그인하거나 회원가입하면 바로 담아 드릴게요."); return;
+  }
   const existing = cart.find(c => c.product_id === productId);
   const quantity = Math.min(99, (existing?.quantity ?? 0) + qty);
   const { error } = await sb.from("cart_items").upsert({ user_id: user.id, product_id: productId, quantity });
   if (error){ toast(friendlyError(error)); return; }
   await loadCart(); renderAccount(); renderCart();
-  $("#detail").close(); toast("장바구니에 담았습니다.");
+  $("#detail").open && $("#detail").close();
+  const name = products.find(p => p.id === productId)?.name ?? "제품";
+  const last = name.charCodeAt(name.length - 1);   // 받침이 있으면 '을', 없으면 '를'
+  const josa = last >= 0xAC00 && last <= 0xD7A3 ? ((last - 0xAC00) % 28 ? "을" : "를") : "을(를)";
+  toast(`${name}${josa} 담았어요. 맨 위 '장바구니'를 누르면 주문할 수 있어요.`);
 }
 
 async function changeQty(productId, quantity){
@@ -326,7 +339,9 @@ $("#filters").addEventListener("click", e => {
   activeCat = b.dataset.cat; renderFilters(); renderProducts();
 });
 $("#productGrid").addEventListener("click", e => {
-  const b = e.target.closest(".prod"); if (b) openDetail(Number(b.dataset.id));
+  const add = e.target.closest("[data-add]");
+  if (add){ addToCart(Number(add.dataset.add), 1); return; }
+  const b = e.target.closest(".prod-open"); if (b) openDetail(Number(b.dataset.id));
 });
 document.querySelector(".moments").addEventListener("click", e => {
   const b = e.target.closest(".moment"); if (b) openDetail(Number(b.dataset.id));
