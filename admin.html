@@ -85,6 +85,7 @@ main.wrap{padding-block:32px 64px}
           <label for="pfColor">병 색상<input id="pfColor" type="color" value="#B8925A" style="height:44px;padding:4px"></label>
           <label for="pfStep">루틴 순서 (없으면 비움)<input id="pfStep" type="number" min="1" max="9"></label>
           <label for="pfSort">진열 순서<input id="pfSort" type="number" value="10"></label>
+          <label class="full" for="pfImg">사진 주소 (예: images/product-3-essence.webp 또는 https://… 사진 링크)<input id="pfImg" maxlength="500" placeholder="비워 두면 병 그림이 나옵니다"></label>
           <label class="full" for="pfSummary">한 줄 소개<input id="pfSummary" maxlength="60"></label>
           <label class="full" for="pfDesc">상세 설명<textarea id="pfDesc"></textarea></label>
           <label class="full" for="pfHow">사용법<textarea id="pfHow" style="min-height:70px"></textarea></label>
@@ -227,7 +228,9 @@ async function loadProducts(){
   ]);
   products = p.data ?? []; ingredients = i.data ?? [];
   $("#productRows").innerHTML = products.map(x => `<tr><td class="num">${x.sort_order}</td>
-    <td><span class="dot" style="--c:${esc(x.color)};width:14px;height:14px;display:inline-block;vertical-align:middle;margin-right:8px"></span>${esc(x.name)}${x.is_featured ? ' <span class="badge">추천</span>' : ""}</td>
+    <td>${x.image_url
+        ? `<img src="${esc(x.image_url)}" alt="" width="36" height="36" style="width:36px;height:36px;object-fit:cover;vertical-align:middle;margin-right:10px;border:1px solid var(--line)">`
+        : `<span class="dot" style="--c:${esc(x.color)};width:14px;height:14px;display:inline-block;vertical-align:middle;margin-right:8px"></span>`}${esc(x.name)}${x.is_featured ? ' <span class="badge">추천</span>' : ""}</td>
     <td>${esc(x.category)}</td><td class="num">${won(x.price)}</td>
     <td><label class="check"><input type="checkbox" data-active="${x.id}" ${x.is_active ? "checked" : ""}> ${x.is_active ? "판매 중" : "숨김"}</label></td>
     <td><button class="mini" type="button" data-edit="${x.id}">수정</button></td></tr>`).join("") || empty(6, "등록된 제품이 없습니다.");
@@ -243,6 +246,7 @@ function fillForm(p){
   $("#pfId").value = p?.id ?? ""; $("#pfName").value = p?.name ?? ""; $("#pfCat").value = p?.category ?? "";
   $("#pfPrice").value = p?.price ?? ""; $("#pfVol").value = p?.volume ?? ""; $("#pfColor").value = p?.color ?? "#B8925A";
   $("#pfStep").value = p?.routine_step ?? ""; $("#pfSort").value = p?.sort_order ?? 10;
+  $("#pfImg").value = p?.image_url ?? "";
   $("#pfSummary").value = p?.summary ?? ""; $("#pfDesc").value = p?.description ?? ""; $("#pfHow").value = p?.how_to_use ?? "";
   $("#pfFeat").checked = !!p?.is_featured; $("#pfActive").checked = p ? p.is_active : true;
   renderIngChecks(p ? p.product_ingredients.map(x => x.ingredient_id) : []);
@@ -269,7 +273,7 @@ $("#productForm").addEventListener("submit", async e => {
   const row = {
     name: $("#pfName").value.trim(), category: $("#pfCat").value.trim(), price: Number($("#pfPrice").value),
     volume: $("#pfVol").value.trim(), color: $("#pfColor").value, routine_step: $("#pfStep").value ? Number($("#pfStep").value) : null,
-    sort_order: Number($("#pfSort").value || 0), summary: $("#pfSummary").value.trim(), description: $("#pfDesc").value.trim(),
+    sort_order: Number($("#pfSort").value || 0), image_url: $("#pfImg").value.trim() || null, summary: $("#pfSummary").value.trim(), description: $("#pfDesc").value.trim(),
     how_to_use: $("#pfHow").value.trim(), is_featured: $("#pfFeat").checked, is_active: $("#pfActive").checked
   };
   out.className = "msg"; out.textContent = "저장하는 중…";
