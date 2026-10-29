@@ -7,11 +7,12 @@
 <meta name="description" content="약초의 이야기를 담은 한방 스킨케어, 본초담 (교육용 가상 브랜드)">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Nanum+Myeongjo:wght@400;700;800&family=Noto+Sans+KR:wght@400;500;700&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@1,500;1,600&family=Nanum+Myeongjo:wght@400;700;800&family=Noto+Sans+KR:wght@400;500;700&display=swap">
 <link rel="stylesheet" href="style.css">
 <!-- Supabase 공식 도구 (로그인·장바구니·주문에 사용) -->
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>
 <script src="config.js"></script>
+<script src="devices.js" defer></script>
 </head>
 <body>
 
@@ -217,9 +218,10 @@ async function loadPublic(){
     products = p.data;
     renderFilters(); renderProducts(); renderRoutine(); renderReviews();
     $("#ingList").innerHTML = i.data.map(x => `
-      <div class="ing"><div class="hj" aria-hidden="true">${esc(x.hanja)}</div>
-        <div><h3>${esc(x.name)}<em>${esc(x.english)}</em></h3><p>${esc(x.story)}</p>
-        <div class="origin">산지 · ${esc(x.origin)}</div></div></div>`).join("");
+      <div class="ing" style="--c:${ING_COLORS[x.name] ?? "var(--blush)"}">
+        <div class="en">${esc(x.english)}</div>
+        <h3>${esc(x.name)}</h3><p>${esc(x.story)}</p>
+        <div class="origin">산지 · ${esc(x.origin)}</div></div>`).join("");
     setLive("ok", `Supabase 실시간 연결됨 · 제품 ${products.length}개 · 원료 ${i.data.length}개`);
   }catch(err){
     console.error(err);
@@ -233,6 +235,10 @@ function renderFilters(){
   $("#filters").innerHTML = cats.map(c =>
     `<button class="chip" type="button" aria-pressed="${c === activeCat}" data-cat="${esc(c)}">${esc(c)}</button>`).join("");
 }
+
+// 원료마다 어울리는 파스텔 색 (원료 카드 오른쪽 위 동그라미)
+const ING_COLORS = { "홍삼": "#F6D3CC", "쑥": "#DCEBD3", "감초": "#F7E8C2", "당귀": "#EEDDD0",
+  "대추": "#F7D1D9", "녹차": "#D6ECDA", "오미자": "#F4CCD8" };
 
 // 제품 사진이 있으면 사진을, 없으면 병 그림을 보여 줍니다
 function productVisual(p, hanja){
@@ -277,7 +283,7 @@ function openDetail(id){
     <button class="close" type="button" aria-label="닫기" data-close>×</button>
     ${p.image_url ? `<img class="dlg-img" src="${esc(p.image_url)}" alt="${esc(p.name)}" width="800" height="800">` : ""}
     <div><div class="eyebrow">${esc(p.category)}</div><h2>${esc(p.name)}</h2></div>
-    <div class="tags">${ings.map(i => `<span class="tag">${esc(i.name)} ${esc(i.hanja)}</span>`).join("")}</div>
+    <div class="tags">${ings.map(i => `<span class="tag">${esc(i.name)}</span>`).join("")}</div>
     <p style="margin:0">${esc(p.description)}</p>
     <dl><dt>가격</dt><dd>${won(p.price)}</dd><dt>용량</dt><dd>${esc(p.volume)}</dd>
         <dt>사용법</dt><dd>${esc(p.how_to_use)}</dd><dt>평균 별점</dt><dd>${avg} (${rvs.length}개)</dd></dl>

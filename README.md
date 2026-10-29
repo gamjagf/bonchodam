@@ -11,6 +11,7 @@ Claude 에이전트가 **복사·붙여넣기 없이** 직접 만든 실습용 �
 | `admin.html` | 관리자 화면 (주문 상태 변경, 제품 등록·수정, 문의·후기·회원 관리) |
 | `style.css` | 두 화면이 함께 쓰는 디자인 |
 | `config.js` | Supabase 연결 정보와 공용 도구 |
+| `devices.js` | 오른쪽 아래 PC·태블릿·모바일 화면 보기 아이콘 |
 
 ## 데이터 창고 (Supabase: bonchodam-shop)
 

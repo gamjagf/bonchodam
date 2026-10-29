@@ -1,20 +1,22 @@
 
-/* 레이아웃: 한지 위에 먹으로 쓴 약방 장부 — 넓은 여백, 세로 한자 표기, 약재 서랍장 그리드 */
+/* 레이아웃: 맑은 아침 하늘처럼 — 흰 바탕에 하늘빛·연분홍 기운, 둥근 카드와 넉넉한 여백 (20대 타깃, 청순·밝음) */
 :root{
-  --hanji:#F5F0E6;      /* 한지 아이보리 배경 */
-  --hanji-2:#ECE4D4;    /* 한 톤 짙은 한지 */
-  --meok:#2B2B2B;       /* 먹색 글씨 */
-  --meok-soft:#5E5850;  /* 옅은 먹 */
-  --gold:#B8925A;       /* 인삼 골드 */
-  --ssuk:#6B7F5E;       /* 쑥 그린 */
-  --line:#D9CFBC;
-  --card:#FBF8F2;
+  --hanji:#FCFDFF;      /* 바탕: 맑은 흰색 */
+  --hanji-2:#F1F6FB;    /* 옅은 하늘 안개 */
+  --meok:#2F3342;       /* 글씨: 부드러운 먹색 */
+  --meok-soft:#6E7385;  /* 보조 글씨 */
+  --gold:#D27D95;       /* 포인트: 연한 장밋빛 */
+  --ssuk:#6F9CC6;       /* 보조 포인트: 하늘색 */
+  --line:#E4E9F0;
+  --card:#FFFFFF;
+  --sky:#EAF3FB;        /* 배경 하늘빛 */
+  --blush:#FCEFF3;      /* 배경 연분홍 */
+  --accent-serif:"Cormorant Garamond", "Nanum Myeongjo", serif;
   --display:"Nanum Myeongjo", "Noto Serif KR", serif;
   --body:"Noto Sans KR", "Apple SD Gothic Neo", "Malgun Gothic", sans-serif;
 }
-@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
-  --hanji:#1E1B17;--hanji-2:#28241F;--meok:#EDE6D8;--meok-soft:#B3AA9A;--gold:#D2AE73;--ssuk:#9DB08E;--line:#3D372F;--card:#25211C;color-scheme:dark}}
-:root[data-theme="dark"]{--hanji:#1E1B17;--hanji-2:#28241F;--meok:#EDE6D8;--meok-soft:#B3AA9A;--gold:#D2AE73;--ssuk:#9DB08E;--line:#3D372F;--card:#25211C;color-scheme:dark}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){--hanji:#15171E;--hanji-2:#1C202B;--meok:#EEF0F6;--meok-soft:#A8AEC0;--gold:#EA9DB3;--ssuk:#9CC3E6;--line:#2C3242;--card:#1B1E28;--sky:#18202D;--blush:#261C24;color-scheme:dark}}
+:root[data-theme="dark"]{--hanji:#15171E;--hanji-2:#1C202B;--meok:#EEF0F6;--meok-soft:#A8AEC0;--gold:#EA9DB3;--ssuk:#9CC3E6;--line:#2C3242;--card:#1B1E28;--sky:#18202D;--blush:#261C24;color-scheme:dark}
 
 *{box-sizing:border-box}
 html{scroll-behavior:smooth}
@@ -209,3 +211,77 @@ img.dot{object-fit:cover;border:1px solid var(--line)}
 .grid{grid-template-columns:repeat(3,minmax(0,1fr))}
 @media (max-width:860px){.grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
 @media (max-width:520px){.grid{grid-template-columns:1fr}}
+
+
+/* ================================================================
+   청순·밝은 스타일 (20대 타깃)
+   ================================================================ */
+body{background:
+  radial-gradient(900px 520px at 88% 0%, var(--blush), transparent 70%),
+  linear-gradient(180deg, var(--sky) 0, var(--hanji) 640px) no-repeat, var(--hanji)}
+header{background:color-mix(in srgb,var(--hanji) 82%,transparent);border-bottom-color:transparent;box-shadow:0 1px 0 var(--line)}
+body::before{background:var(--hanji)}
+section{border-top:0}
+section:nth-of-type(even){background:linear-gradient(180deg,transparent,var(--hanji-2) 30%,var(--hanji-2) 70%,transparent)}
+.eyebrow{color:var(--gold)}
+.hero h1{font-weight:700;letter-spacing:-.01em}
+.hero-photo img{border-radius:28px;box-shadow:0 30px 70px -36px rgba(80,110,160,.45)}
+
+/* 둥근 버튼 */
+.btn{border-radius:999px;padding:12px 26px}
+.btn:hover{background:var(--gold);border-color:var(--gold);color:#fff}
+.mini{border-radius:999px;padding:7px 14px}
+.chip{background:var(--card)}
+.chip[aria-pressed="true"]{background:var(--gold);border-color:var(--gold);color:#fff}
+.live{background:var(--card)}
+
+/* 제품 카드: 간격 두고 둥글게 */
+.grid{gap:22px;border:0}
+.prod{border:1px solid var(--line)!important;border-radius:20px;overflow:hidden;box-shadow:0 10px 30px -24px rgba(60,80,120,.35);transition:transform .25s ease, box-shadow .25s ease, background .2s}
+.prod:hover{background:var(--card);transform:translateY(-4px);box-shadow:0 18px 40px -24px rgba(60,80,120,.45)}
+.pimg{background:var(--sky)}
+.prod .foot{border-top-style:solid}
+.badge{border-radius:99px;padding:2px 9px}
+
+/* 원료 사전: 한자 대신 영어 이름 카드 */
+.ing-list{grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:18px}
+.ing{display:grid;grid-template-columns:none;gap:6px;padding:22px 22px 20px;border:1px solid var(--line);border-radius:20px;background:var(--card);position:relative;overflow:hidden}
+.ing::before{content:"";position:absolute;right:-30px;top:-30px;width:110px;height:110px;border-radius:50%;background:var(--c,var(--blush));opacity:.55}
+.ing .en{font-family:var(--accent-serif);font-style:italic;font-size:28px;line-height:1.1;color:var(--meok);position:relative}
+.ing h3{font-size:16px;font-weight:700;position:relative}
+.ing h3 small{font-family:var(--body);font-weight:400;font-size:12px;color:var(--meok-soft);margin-left:6px;letter-spacing:.05em}
+.ing p{margin:4px 0 0}
+.ing .origin{color:var(--ssuk)}
+
+/* 화보·후기·패널 둥글게 */
+.moment{border-radius:20px}
+.rv,.panel,.order,.kpi,.upl{border-radius:18px}
+.tbl-wrap{border-radius:14px}
+.dlg-img{border-radius:16px}
+dialog{border-radius:22px}
+input,textarea,select{border-radius:12px}
+.step{border-left-color:var(--line)}
+.step b{font-family:var(--accent-serif);font-style:italic;font-weight:600}
+.stars{color:var(--gold)}
+footer{border-top:0;background:var(--hanji-2)}
+
+/* PC·태블릿·모바일 보기 */
+.device-bar{position:fixed;right:calc(16px + env(safe-area-inset-right,0px));bottom:calc(16px + env(safe-area-inset-bottom,0px));z-index:70;display:flex;gap:4px;padding:5px;background:var(--card);border:1px solid var(--line);border-radius:999px;box-shadow:0 12px 30px -14px rgba(40,60,100,.45)}
+.device-bar button{width:42px;height:42px;border:0;border-radius:50%;background:transparent;color:var(--meok-soft);cursor:pointer;display:grid;place-items:center}
+.device-bar button:hover{background:var(--hanji-2);color:var(--meok)}
+.device-bar button[aria-pressed="true"]{background:var(--gold);color:#fff}
+.device-bar svg{width:20px;height:20px}
+.device-stage{position:fixed;inset:0;z-index:65;background:color-mix(in srgb,var(--meok) 55%,transparent);display:grid;place-items:center;padding:20px;backdrop-filter:blur(4px)}
+.device-shell{background:#1B1D24;padding:14px;border-radius:34px;box-shadow:0 40px 80px -30px rgba(0,0,0,.6);display:grid;gap:8px;max-height:100%}
+.device-shell.tablet{border-radius:28px}
+.device-shell iframe{display:block;border:0;border-radius:22px;background:var(--hanji);height:min(860px,calc(100vh - 110px));max-width:calc(100vw - 68px)}
+.device-label{color:#cfd3dd;font-size:12px;text-align:center}
+@media (max-width:700px){.device-bar{display:none}}
+
+/* 휴대폰에서 위쪽 메뉴 버튼을 작고 한 줄로 */
+@media (max-width:520px){
+  header .wrap{padding-block:10px}
+  .acct{gap:6px;flex-wrap:nowrap}
+  .acct .mini{padding:6px 10px;font-size:12px}
+  .logo small{display:none}
+}
