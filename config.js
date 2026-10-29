@@ -9,7 +9,7 @@ const SUPABASE_URL = "https://mxiilctpchgtncqxlmtq.supabase.co";
 const SUPABASE_KEY = "sb_publishable_ZJc_dzSLMHCW2EcZCNa7jA_SJ2Xl-cL";
 
 // Supabase 연결 도구 만들기 (로그인 상태도 이 도구가 기억합니다)
-const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+const sb = window.supabase ? window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY) : undefined;
 
 // 자주 쓰는 작은 도구들
 const $ = s => document.querySelector(s);
